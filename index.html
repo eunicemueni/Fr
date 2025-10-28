@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kairah Studio Payment</title>
+
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- PayPal -->
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+
+  <!-- Paystack -->
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; background:#f8f8f8; margin:0; padding:0; }
+    header { padding:20px; text-align:center; background:#3D2C41; color:#fff; font-size:24px; }
+    main { padding:20px; max-width:800px; margin:auto; }
+    section { background:#fff; padding:20px; border-radius:12px; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+    h2 { margin-bottom:16px; }
+    .payment-buttons { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+    .payment-buttons button { padding:12px; border:none; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer; font-size:16px; }
+    .stripe-btn { background:#6772e5; }
+    .paypal-btn { background:#ffc439; color:#000; }
+    .paystack-btn { background:#00cfff; }
+    .wise-btn { background:#25b6f5; }
+    .payment-icons { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:10px; }
+    .payment-icons img { width:44px; }
+    footer { text-align:center; padding:12px; background:#eee; }
+  </style>
+</head>
+<body>
+  <header>
+    Kairah Studio
+  </header>
+
+  <main>
+    <section id="payment">
+      <h2>Choose Your Payment Method</h2>
+
+      <!-- Buttons -->
+      <div class="payment-buttons">
+        <button class="stripe-btn" onclick="payStripe('price_XXXXXXXX')">Pay with Stripe</button>
+        <div id="paypal-button-container">
+          <button class="paypal-btn" onclick="renderPayPalButton()">Pay with PayPal</button>
+        </div>
+        <button class="paystack-btn" onclick="payPaystack(1900,'Pro')">Pay with Paystack</button>
+        <button class="wise-btn" onclick="payWise(19,'USD','Pro')">Pay with Wise</button>
+      </div>
+
+      <!-- Card logos -->
+      <div class="payment-icons">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Mastercard-logo.svg" alt="Mastercard">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Amex_logo.svg" alt="Amex">
+        <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal">
+      </div>
+    </section>
+
+    <section>
+      <h2>Welcome to Kairah Studio</h2>
+      <p>Generate AI videos, explore tools, and manage your subscription.</p>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2025 Kairah Studio. All rights reserved.
+  </footer>
+
+  <script>
+    // ---------------- Stripe Payment ----------------
+    async function payStripe(priceId){
+      const stripe = Stripe('YOUR_STRIPE_PUBLIC_KEY');
+
+      // Create a checkout session from your backend
+      const response = await fetch('/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId })
+      });
+
+      const session = await response.json();
+      stripe.redirectToCheckout({ sessionId: session.id });
+    }
+
+    // ---------------- PayPal Payment ----------------
+    function renderPayPalButton(){
+      paypal.Buttons({
+        createOrder: function(data, actions){
+          return actions.order.create({
+            purchase_units:[{ amount:{ value:'19.00' } }]
+          });
+        },
+        onApprove: function(data, actions){
+          return actions.order.capture().then(function(details){
+            alert('PayPal payment successful for ' + details.payer.name.given_name);
+          });
+        },
+        onError: function(err){
+          alert('PayPal error: ' + err);
+        }
+      }).render('#paypal-button-container');
+    }
+
+    // ---------------- Paystack Payment ----------------
+    function payPaystack(amountKSh, plan){
+      var handler = PaystackPop.setup({
+        key: 'YOUR_PAYSTACK_PUBLIC_KEY',
+        email: 'customer@example.com',
+        amount: amountKSh * 100,
+        currency: 'KES',
+        callback: function(response){
+          alert('Payment complete for ' + plan + '. Reference: ' + response.reference);
+        },
+        onClose: function(){
+          alert('Payment window closed.');
+        }
+      });
+      handler.openIframe();
+    }
+
+    // ---------------- Wise Payment Simulation ----------------
+    function payWise(amount, currency, plan){
+      alert('Redirecting to Wise for ' + plan + ', amount: ' + amount + ' ' + currency);
+      // For live integration, redirect user to Wise checkout URL generated from your backend
+    }
+  </script>
+</body>
+</html>
