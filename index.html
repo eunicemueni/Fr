@@ -1,291 +1,179 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Kairah Studio — Divine Cinematics by AI</title>
+# main.py
+import os
+import subprocess
+import sys
 
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Display:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+# Auto-install required packages if missing
+packages = ["fastapi", "uvicorn", "requests", "stripe", "python-dotenv", "pydantic"]
+for pkg in packages:
+    try:
+        __import__(pkg)
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg)
 
-<!-- Firebase (visual scaffold - replace keys in script) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import stripe
+import requests
 
-<!-- Stripe + PayPal (visual buttons) -->
-<script src="https://js.stripe.com/v3/"></script>
-<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+app = FastAPI()
 
-<style>
-  :root{
-    --deep-plum:#3D2C41;
-    --gold:#D4AF37;
-    --gold-2:#FFD700;
-    --card-bg: rgba(255,255,255,0.04);
-    --glass: rgba(255,255,255,0.03);
-    --accent:#D4AF37;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:'Poppins',sans-serif;
-    background: linear-gradient(135deg,#0B0A0B,#1C1B1C);
-    color:#fff;
-    -webkit-font-smoothing:antialiased;
-  }
-  header{
-    background:var(--deep-plum);
-    padding:28px 20px;
-    text-align:center;
-    box-shadow:0 6px 20px rgba(0,0,0,0.6);
-    position:sticky;
-    top:0;
-    z-index:40;
-  }
-  header h1{
-    margin:0;
-    font-family:'Cinzel Display',serif;
-    font-size:36px;
-    color:var(--gold);
-    letter-spacing:0.5px;
-  }
-  header p{ margin:6px 0 0; color:var(--gold-2); font-weight:500; }
-  nav{ margin-top:12px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
-  nav a{ color:var(--gold-2); text-decoration:none; font-weight:500; padding:6px 8px; border-radius:6px; }
-  nav a:hover{ background:rgba(255,215,0,0.08); color:#fff; }
+# Allow frontend calls
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace with frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-  main{ max-width:1200px; margin:36px auto; padding:0 20px; }
+# -------------------
+# Environment / Keys
+# -------------------
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "sk_test_...")
+stripe.api_key = STRIPE_SECRET_KEY
 
-  section{ margin-bottom:48px; }
-  h2{ font-family:'Cinzel Display',serif; font-size:24px; margin:0 0 18px; text-align:center; }
-  .hero{
-    display:grid;
-    grid-template-columns:1fr;
-    gap:18px;
-    align-items:center;
-    text-align:center;
-  }
-  .video-mock{
-    background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.7));
-    border:1px solid rgba(212,175,55,0.06);
-    height:320px;
-    border-radius:14px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    color:var(--gold);
-    box-shadow:0 18px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
-    font-weight:700;
-    font-size:18px;
-  }
-  .hero .cta{ margin-top:10px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  button.primary{ background:var(--gold); border:none; color:#111; padding:12px 18px; border-radius:10px; font-weight:700; cursor:pointer; }
-  button.ghost{ background:transparent; border:1px solid rgba(212,175,55,0.18); color:var(--gold-2); padding:10px 16px; border-radius:10px; cursor:pointer; }
-  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+MPESA_KEY = os.environ.get("MPESA_KEY", "your_mpesa_key")
+MPESA_SECRET = os.environ.get("MPESA_SECRET", "your_mpesa_secret")
+MPESA_SHORTCODE = os.environ.get("MPESA_SHORTCODE", "your_shortcode")
+MPESA_PASSKEY = os.environ.get("MPESA_PASSKEY", "your_passkey")
 
-  .card{
-    background:var(--card-bg);
-    padding:18px;
-    border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.02);
-  }
-  .card h3{ margin:0 0 8px; font-size:18px; }
-  .card p{ margin:0; color: #eae6df; font-size:14px; line-height:1.45; }
+PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "sk_test_...")
+PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY", "pk_test_...")
 
-  /* Pricing layout */
-  .pricing-grid{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
-  .price-card{ width:240px; padding:18px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15)); border:1px solid rgba(212,175,55,0.06); }
-  .price-card h4{ margin:0 0 6px; color:var(--gold-2); }
-  .price-card .price{ font-size:20px; font-weight:800; margin:8px 0; color:var(--gold); }
-  .payment-icons{ display:flex; gap:8px; align-items:center; margin-top:12px; justify-content:center; }
-  .payment-icons img{ width:44px; height:auto; filter: none; }
+WISE_API_TOKEN = os.environ.get("WISE_API_TOKEN", "your_wise_api_token")
 
-  /* Signup overlay */
-  #auth-overlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,0.75);
-    z-index:120;
-    align-items:center;
-    justify-content:center;
-  }
-  #auth-box{ width:100%; max-width:480px; background:#121012; border-radius:12px; padding:20px; border:1px solid rgba(212,175,55,0.06); }
-  #auth-box h3{ font-family:'Cinzel Display',serif; color:var(--gold); margin:0 0 8px; text-align:center; }
-  #auth-box form{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
-  #auth-box input, #auth-box select{ padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:transparent; color:#fff; }
-  #auth-box button{ padding:10px; border-radius:8px; border:none; background:var(--gold); color:#111; font-weight:700; cursor:pointer; }
+VIDEO_API_KEY = os.environ.get("VIDEO_API_KEY", "your_ai_video_api_key")
+VIDEO_API_URL = "https://your-ai-video-api.com/generate"  # Replace with your AI generator
 
-  /* Dashboard tabs */
-  .tabs{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
-  .tabs button{ background:var(--deep-plum); color:var(--gold-2); border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
-  .tabs button.active{ background:var(--gold); color:#111; font-weight:700; }
+# -------------------
+# Models
+# -------------------
+class PaymentRequest(BaseModel):
+    amount: float
+    currency: str
+    email: str
 
-  .tab-content{ display:none; }
-  .tab-content.active{ display:block; }
+class VideoRequest(BaseModel):
+    prompt: str
+    user_email: str
 
-  /* Filters UI */
-  .filters-card{ display:flex; flex-direction:column; gap:8px; }
-  .filters-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+# -------------------
+# In-memory DB
+# -------------------
+users_db = {}        # email -> {email, plan}
+affiliates_db = {}   # code -> {email, commission}
 
-  /* About - long content */
-  .about-long{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08)); padding:22px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); }
-  .about-long h3{ margin-top:0; color:var(--gold); }
-  .about-questions{ margin-top:14px; display:grid; gap:12px; }
-  .q{ background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; }
-  .q h4{ margin:0 0 6px; font-size:15px; color:var(--gold-2); }
-  .q p{ margin:0; color:#e8e2d8; line-height:1.5; font-size:14px; }
+# -------------------
+# Helper
+# -------------------
+def can_generate_video(user_email):
+    user = users_db.get(user_email)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return True
 
-  footer{ text-align:center; margin:28px 0 10px; font-size:12px; color:rgba(212,175,55,0.65); }
-</style>
-</head>
-<body>
+# -------------------
+# Signup (auto ready for video)
+# -------------------
+@app.post("/api/signup")
+async def signup(req: PaymentRequest):
+    if req.email in users_db:
+        raise HTTPException(status_code=400, detail="User already exists")
+    users_db[req.email] = {"email": req.email, "plan": "free"}  # free plan by default
+    return {"message": "User created, ready to generate videos"}
 
-<header>
-  <h1>Kairah Studio</h1>
-  <p>AI-Powered Cinematic Creations</p>
-  <nav>
-    <a href="#hero">Home</a>
-    <a href="#features">Features</a>
-    <a href="#pricing">Pricing</a>
-    <a href="#about">About</a>
-  </nav>
-</header>
+# -------------------
+# Login
+# -------------------
+@app.post("/api/login")
+async def login(req: PaymentRequest):
+    if req.email not in users_db:
+        raise HTTPException(status_code=400, detail="User not found")
+    return {"message": "Login successful", "user": users_db[req.email]}
 
-<main>
+# -------------------
+# Video Generation
+# -------------------
+@app.post("/api/generate-video")
+async def generate_video(req: VideoRequest):
+    can_generate_video(req.user_email)
+    user = users_db[req.user_email]
+    length = 6 if user["plan"] == "free" else 30  # free users = 6s, paid = 30s
+    payload = {"prompt": req.prompt, "user_email": req.user_email, "length_seconds": length}
+    headers = {"Authorization": f"Bearer {VIDEO_API_KEY}", "Content-Type": "application/json"}
+    try:
+        response = requests.post(VIDEO_API_URL, json=payload, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        video_url = data.get("video_url")
+        if not video_url:
+            raise HTTPException(status_code=500, detail="Video generation failed")
+        return {"video_url": video_url, "message": f"Video generated successfully ({length}s)"}
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Video API error: {str(e)}")
 
-<!-- Hero -->
-<section id="hero" class="hero">
-  <div class="video-mock">
-    Preview Your 6s AI Video Here
-    <div class="cta">
-      <button class="primary" onclick="alert('Sign In First')">Generate Video</button>
-      <button class="ghost" onclick="alert('Preview Templates')">Preview Templates</button>
-    </div>
-  </div>
-</section>
+# -------------------
+# Stripe Payment
+# -------------------
+@app.post("/api/create-stripe-payment")
+async def create_stripe_payment(req: PaymentRequest):
+    try:
+        payment_intent = stripe.PaymentIntent.create(
+            amount=int(req.amount * 100),
+            currency=req.currency.lower(),
+            receipt_email=req.email,
+        )
+        # Upgrade user to paid plan automatically
+        if req.email in users_db:
+            users_db[req.email]["plan"] = "paid"
+        return {"client_secret": payment_intent.client_secret}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-<!-- Features -->
-<section id="features">
-<h2>Features</h2>
-<div class="grid">
-  <div class="card"><h3>Prompt Magic</h3><p>Refine your text prompt into viral-ready AI videos automatically.</p></div>
-  <div class="card"><h3>High Quality Clips</h3><p>Up to 4K resolution with cinematic aesthetics and color grading.</p></div>
-  <div class="card"><h3>Template Library</h3><p>Hundreds of ready-to-use video templates for trends, ads, and stories.</p></div>
-  <div class="card"><h3>AI Audio</h3><p>Voiceovers generated in multiple languages to match your video's mood.</p></div>
-</div>
-</section>
+# -------------------
+# M-Pesa Express
+# -------------------
+@app.post("/api/mpesa-express")
+async def mpesa_express(req: PaymentRequest):
+    # Placeholder: implement STK push
+    if req.email in users_db:
+        users_db[req.email]["plan"] = "paid"
+    return {"message": f"STK Push triggered for {req.amount} {req.currency} to {req.email}, user upgraded to paid"}
 
-<!-- Pricing -->
-<section id="pricing">
-<h2>Pricing</h2>
-<div class="pricing-grid">
-  <!-- Free -->
-  <div class="price-card">
-    <h4>Free</h4>
-    <div class="price">$0</div>
-    <p>1 free 6s watermarked clip, Prompt Magic Lite, preview tools.</p>
-  </div>
+# -------------------
+# Paystack
+# -------------------
+@app.post("/api/paystack-init")
+async def paystack_init(req: PaymentRequest):
+    headers = {"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}", "Content-Type": "application/json"}
+    data = {"email": req.email, "amount": int(req.amount * 100), "callback_url": "https://bb-6-ym40.onrender.com/api/paystack-webhook"}
+    response = requests.post("https://api.paystack.co/transaction/initialize", json=data, headers=headers)
+    return response.json()
 
-  <!-- Pro -->
-  <div class="price-card">
-    <h4>Pro</h4>
-    <div class="price">$19 / month<br><small style="font-weight:500;color:#eadfb0;">or $300 / year</small></div>
-    <p>Up to 1-minute videos, 10 generations / month, 1080p export, merge 3 clips.</p>
-    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="primary" onclick="payStripe('pro_month')">Stripe</button>
-      <button class="primary" onclick="payPayPal('pro')">PayPal</button>
-      <button class="primary" onclick="payMpesa('pro')">M-Pesa</button>
-      <button class="primary" onclick="payWise('pro')">Wise</button>
-      <button class="primary" onclick="payPaystack('pro')">Paystack</button>
-    </div>
-  </div>
+@app.post("/api/paystack-webhook")
+async def paystack_webhook(request: Request):
+    event = await request.json()
+    if event.get("event") == "charge.success":
+        email = event["data"]["customer"]["email"]
+        if email in users_db:
+            users_db[email]["plan"] = "paid"
+        return {"status": "success"}
+    return {"status": "ignored"}
 
-  <!-- Diamond -->
-  <div class="price-card">
-    <h4>Diamond</h4>
-    <div class="price">$49 / month<br><small style="font-weight:500;color:#eadfb0;">or $450 / year</small></div>
-    <p>Up to 2–3 minute videos, 50 generations / month, 4K exports, bulk generator.</p>
-    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="primary" onclick="payStripe('diamond_month')">Stripe</button>
-      <button class="primary" onclick="payPayPal('diamond')">PayPal</button>
-      <button class="primary" onclick="payMpesa('diamond')">M-Pesa</button>
-      <button class="primary" onclick="payWise('diamond')">Wise</button>
-      <button class="primary" onclick="payPaystack('diamond')">Paystack</button>
-    </div>
-  </div>
+# -------------------
+# Affiliate
+# -------------------
+@app.post("/api/affiliate")
+async def affiliate(req: PaymentRequest):
+    code = req.email.split("@")[0] + "_ref"
+    affiliates_db[code] = {"email": req.email, "commission": 0}
+    return {"referral_code": code, "message": "Affiliate created"}
 
-  <!-- Cinematic -->
-  <div class="price-card">
-    <h4>Cinematic</h4>
-    <div class="price">$99 / month<br><small style="font-weight:500;color:#eadfb0;">or $600 / year</small></div>
-    <p>Studio-grade control, priority rendering, extended length, advanced storytelling AI.</p>
-    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="primary" onclick="payStripe('cinematic_month')">Stripe</button>
-      <button class="primary" onclick="payPayPal('cinematic')">PayPal</button>
-      <button class="primary" onclick="payMpesa('cinematic')">M-Pesa</button>
-      <button class="primary" onclick="payWise('cinematic')">Wise</button>
-      <button class="primary" onclick="payPaystack('cinematic')">Paystack</button>
-    </div>
-  </div>
-
-  <!-- Lifetime -->
-  <div class="price-card">
-    <h4>Lifetime (Launch)</h4>
-    <div class="price">$500 one-time</div>
-    <p>Unlimited videos, all features unlocked, lifetime access & priority support.</p>
-    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <button class="primary" onclick="payStripe('lifetime')">Stripe</button>
-      <button class="primary" onclick="payPayPal('lifetime')">PayPal</button>
-      <button class="primary" onclick="payMpesa('lifetime')">M-Pesa</button>
-      <button class="primary" onclick="payWise('lifetime')">Wise</button>
-      <button class="primary" onclick="payPaystack('lifetime')">Paystack</button>
-    </div>
-  </div>
-</div>
-
-<div class="payment-icons">
-  <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Mastercard-logo.svg" alt="Mastercard">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Amex_logo.svg" alt="Amex">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/6/63/M-Pesa_Logo.svg" alt="M-Pesa">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/f/f1/Wise_Logo.svg" alt="Wise">
-  <img src="https://seeklogo.com/images/P/paystack-logo-46C1314A9C-seeklogo.com.png" alt="Paystack">
-</div>
-</section>
-
-<!-- About -->
-<section id="about">
-<h2>About Kairah Studio</h2>
-<div class="about-long">
-<h3>AI-Driven Cinematics</h3>
-<p>Kairah Studio generates viral-quality AI videos in seconds. Free users can create short previews, and paid subscribers get access to high-res, long-format, customizable cinematic content with AI-driven storytelling.</p>
-<div class="about-questions">
-<div class="q"><h4>Do I need to sign in?</h4><p>Yes, signing in with Firebase is required to generate videos. Previewing templates does not require login.</p></div>
-<div class="q"><h4>Payment Methods?</h4><p>All subscriptions support Stripe, PayPal, M-Pesa, Wise, and Paystack.</p></div>
-<div class="q"><h4>Can I try before buying?</h4><p>Yes, Free plan allows 1 six-second video with watermark for evaluation.</p></div>
-</div>
-</div>
-</section>
-
-</main>
-
-<footer>
-&copy; 2025 Kairah Studio. All rights reserved.
-</footer>
-
-<script>
-/* Payment stubs */
-function payMpesa(plan){ alert('M-Pesa payment flow for ' + plan + ' (visual mock)'); }
-function payWise(plan){ alert('Wise payment flow for ' + plan + ' (visual mock)'); }
-function payPaystack(plan){ alert('Paystack payment flow for ' + plan + ' (visual mock)'); }
-function payPayPal(plan){ alert('PayPal payment flow for ' + plan + ' (visual mock)'); }
-function payStripe(plan){ alert('Stripe payment flow for ' + plan + ' (visual mock)'); }
-</script>
-
-</body>
-</html>
+# -------------------
+# Run Server
+# -------------------
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
