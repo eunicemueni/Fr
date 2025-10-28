@@ -1,263 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kairah Studio - AI Video Generator</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kairah Studio — Divine Cinematics by AI</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Display:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Firebase (visual scaffold - replace keys in script) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+<!-- Stripe + PayPal (visual buttons) -->
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+
 <style>
-    /* Reset */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f5f5f5; color: #333; line-height: 1.6; }
-    a { text-decoration: none; color: inherit; }
+  :root{
+    --deep-plum:#3D2C41;
+    --gold:#D4AF37;
+    --gold-2:#FFD700;
+    --card-bg: rgba(255,255,255,0.04);
+    --glass: rgba(255,255,255,0.03);
+    --accent:#D4AF37;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background: linear-gradient(135deg,#0B0A0B,#1C1B1C);
+    color:#fff;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    background:var(--deep-plum);
+    padding:28px 20px;
+    text-align:center;
+    box-shadow:0 6px 20px rgba(0,0,0,0.6);
+    position:sticky;
+    top:0;
+    z-index:40;
+  }
+  header h1{
+    margin:0;
+    font-family:'Cinzel Display',serif;
+    font-size:36px;
+    color:var(--gold);
+    letter-spacing:0.5px;
+  }
+  header p{ margin:6px 0 0; color:var(--gold-2); font-weight:500; }
+  nav{ margin-top:12px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
+  nav a{ color:var(--gold-2); text-decoration:none; font-weight:500; padding:6px 8px; border-radius:6px; }
+  nav a:hover{ background:rgba(255,215,0,0.08); color:#fff; }
 
-    /* Header */
-    header { background: #3D2C41; color: #fff; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-    header h1 { font-size: 24px; }
-    nav a { margin-left: 20px; color: white; font-weight: bold; transition: 0.3s; }
-    nav a:hover { opacity: 0.7; }
+  main{ max-width:1200px; margin:36px auto; padding:0 20px; }
 
-    /* Hero */
-    .hero { text-align: center; padding: 100px 20px; background: linear-gradient(135deg, #D4AF37, #3D2C41); color: white; }
-    .hero h2 { font-size: 48px; margin-bottom: 20px; }
-    .hero p { font-size: 18px; max-width: 600px; margin: 0 auto 30px; }
-    .hero button { padding: 15px 30px; font-size: 18px; background: white; color: #3D2C41; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
-    .hero button:hover { opacity: 0.9; }
+  section{ margin-bottom:48px; }
+  h2{ font-family:'Cinzel Display',serif; font-size:24px; margin:0 0 18px; text-align:center; }
+  .hero{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+    align-items:center;
+    text-align:center;
+  }
+  .video-mock{
+    background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.7));
+    border:1px solid rgba(212,175,55,0.06);
+    height:320px;
+    border-radius:14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:var(--gold);
+    box-shadow:0 18px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    font-weight:700;
+    font-size:18px;
+  }
+  .hero .cta{ margin-top:10px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  button.primary{ background:var(--gold); border:none; color:#111; padding:12px 18px; border-radius:10px; font-weight:700; cursor:pointer; }
+  button.ghost{ background:transparent; border:1px solid rgba(212,175,55,0.18); color:var(--gold-2); padding:10px 16px; border-radius:10px; cursor:pointer; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
 
-    /* Sections */
-    section { max-width: 1200px; margin: auto; padding: 50px 20px; }
-    h2.section-title { text-align: center; margin-bottom: 50px; font-size: 36px; color: #3D2C41; }
+  .card{
+    background:var(--card-bg);
+    padding:18px;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.02);
+  }
+  .card h3{ margin:0 0 8px; font-size:18px; }
+  .card p{ margin:0; color: #eae6df; font-size:14px; line-height:1.45; }
 
-    /* Features */
-    .features { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-    .feature { background: white; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); padding: 30px; flex: 1 1 250px; text-align: center; }
-    .feature h3 { margin-top: 0; color: #D4AF37; }
+  /* Pricing layout */
+  .pricing-grid{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
+  .price-card{ width:240px; padding:18px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15)); border:1px solid rgba(212,175,55,0.06); }
+  .price-card h4{ margin:0 0 6px; color:var(--gold-2); }
+  .price-card .price{ font-size:20px; font-weight:800; margin:8px 0; color:var(--gold); }
+  .payment-icons{ display:flex; gap:8px; align-items:center; margin-top:12px; justify-content:center; }
+  .payment-icons img{ width:44px; height:auto; filter: none; }
 
-    /* Pricing */
-    .pricing-section { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-    .plan { background: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); padding: 30px; flex: 1 1 280px; text-align: center; }
-    .plan h2 { color: #3D2C41; }
-    .plan ul { list-style: none; padding-left: 0; margin: 20px 0; }
-    .plan ul li { padding: 5px 0; }
-    .payments { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-    .payments button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; }
-    .payments button:hover { opacity: 0.9; }
-    .paypal { background: #003087; color: white; }
-    .stripe { background: #6772e5; color: white; }
-    .paystack { background: #ffb400; color: black; }
-    .mpesa { background: #00923f; color: white; }
-    .wise { background: #00b0ff; color: white; }
-    .bank { background: #555; color: white; }
+  /* Signup overlay */
+  #auth-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    z-index:120;
+    align-items:center;
+    justify-content:center;
+  }
+  #auth-box{ width:100%; max-width:480px; background:#121012; border-radius:12px; padding:20px; border:1px solid rgba(212,175,55,0.06); }
+  #auth-box h3{ font-family:'Cinzel Display',serif; color:var(--gold); margin:0 0 8px; text-align:center; }
+  #auth-box form{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+  #auth-box input, #auth-box select{ padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:transparent; color:#fff; }
+  #auth-box button{ padding:10px; border-radius:8px; border:none; background:var(--gold); color:#111; font-weight:700; cursor:pointer; }
 
-    /* Testimonials */
-    .testimonials { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
-    .testimonial { background: white; border-radius: 10px; padding: 20px; flex: 1 1 250px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: center; }
-    .testimonial p { font-style: italic; }
-    .testimonial h4 { margin-top: 10px; color: #3D2C41; }
+  /* Dashboard tabs */
+  .tabs{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
+  .tabs button{ background:var(--deep-plum); color:var(--gold-2); border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+  .tabs button.active{ background:var(--gold); color:#111; font-weight:700; }
 
-    /* FAQ */
-    .faq { max-width: 800px; margin: auto; }
-    .faq-item { background: white; border-radius: 10px; padding: 20px; margin-bottom: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    .faq-item h4 { cursor: pointer; color: #D4AF37; }
+  .tab-content{ display:none; }
+  .tab-content.active{ display:block; }
 
-    /* Footer */
-    footer { background: #3D2C41; color: white; text-align: center; padding: 30px 20px; }
-    footer p { margin: 5px 0; }
+  /* Filters UI */
+  .filters-card{ display:flex; flex-direction:column; gap:8px; }
+  .filters-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
-    /* Responsive */
-    @media(max-width:768px){ .features, .pricing-section, .testimonials { flex-direction: column; } }
+  /* About - long content */
+  .about-long{ background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08)); padding:22px; border-radius:12px; border:1px solid rgba(255,255,255,0.02); }
+  .about-long h3{ margin-top:0; color:var(--gold); }
+  .about-questions{ margin-top:14px; display:grid; gap:12px; }
+  .q{ background:rgba(255,255,255,0.02); padding:12px; border-radius:8px; }
+  .q h4{ margin:0 0 6px; font-size:15px; color:var(--gold-2); }
+  .q p{ margin:0; color:#e8e2d8; line-height:1.5; font-size:14px; }
+
+  footer{ text-align:center; margin:28px 0 10px; font-size:12px; color:rgba(212,175,55,0.65); }
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <header>
-    <h1>Kairah Studio</h1>
-    <nav>
-        <a href="#features">Features</a>
-        <a href="#plans">Pricing</a>
-        <a href="#testimonials">Testimonials</a>
-        <a href="#faq">FAQ</a>
-        <a href="#contact">Contact</a>
-    </nav>
+  <h1>Kairah Studio</h1>
+  <p>AI-Powered Cinematic Creations</p>
+  <nav>
+    <a href="#hero">Home</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#about">About</a>
+  </nav>
 </header>
 
-<!-- Hero Section -->
-<section class="hero">
-    <h2>Create Stunning AI Videos Instantly</h2>
-    <p>Kairah Studio lets you generate viral-quality videos, cinematic visuals, and professional content in seconds—no editing skills required.</p>
-    <button onclick="document.getElementById('plans').scrollIntoView({behavior:'smooth'})">Get Started</button>
+<main>
+
+<!-- Hero -->
+<section id="hero" class="hero">
+  <div class="video-mock">
+    Preview Your 6s AI Video Here
+    <div class="cta">
+      <button class="primary" onclick="alert('Sign In First')">Generate Video</button>
+      <button class="ghost" onclick="alert('Preview Templates')">Preview Templates</button>
+    </div>
+  </div>
 </section>
 
-<!-- Features Section -->
+<!-- Features -->
 <section id="features">
-    <h2 class="section-title">Features</h2>
-    <div class="features">
-        <div class="feature">
-            <h3>Fast Video Generation</h3>
-            <p>Create high-quality videos in seconds without complex software.</p>
-        </div>
-        <div class="feature">
-            <h3>AI Templates</h3>
-            <p>Use ready-made templates for social media, marketing, or cinematic projects.</p>
-        </div>
-        <div class="feature">
-            <h3>Multiple Payment Options</h3>
-            <p>Pay with PayPal, Stripe, Paystack, M-Pesa, Wise, or direct bank transfer.</p>
-        </div>
-        <div class="feature">
-            <h3>Unlimited Creativity</h3>
-            <p>Advanced plans let you generate unlimited videos with premium features.</p>
-        </div>
-    </div>
+<h2>Features</h2>
+<div class="grid">
+  <div class="card"><h3>Prompt Magic</h3><p>Refine your text prompt into viral-ready AI videos automatically.</p></div>
+  <div class="card"><h3>High Quality Clips</h3><p>Up to 4K resolution with cinematic aesthetics and color grading.</p></div>
+  <div class="card"><h3>Template Library</h3><p>Hundreds of ready-to-use video templates for trends, ads, and stories.</p></div>
+  <div class="card"><h3>AI Audio</h3><p>Voiceovers generated in multiple languages to match your video's mood.</p></div>
+</div>
 </section>
 
-<!-- Pricing Section -->
-<section id="plans">
-    <h2 class="section-title">Pricing Plans</h2>
-    <div class="pricing-section">
+<!-- Pricing -->
+<section id="pricing">
+<h2>Pricing</h2>
+<div class="pricing-grid">
+  <!-- Free -->
+  <div class="price-card">
+    <h4>Free</h4>
+    <div class="price">$0</div>
+    <p>1 free 6s watermarked clip, Prompt Magic Lite, preview tools.</p>
+  </div>
 
-        <!-- Free Plan -->
-        <div class="plan" data-plan="free">
-            <h2>Free Plan</h2>
-            <ul>
-                <li>1 Video per Email</li>
-                <li>Basic Templates</li>
-                <li>Limited Features</li>
-            </ul>
-            <div class="payments">
-                <button class="paypal" data-method="paypal">Pay with PayPal</button>
-                <button class="stripe" data-method="stripe">Pay with Stripe</button>
-                <button class="paystack" data-method="paystack">Pay with Paystack</button>
-                <button class="mpesa" data-method="mpesa">Pay with M-Pesa</button>
-                <button class="wise" data-method="wise">Pay with Wise</button>
-                <button class="bank" data-method="bank">Bank Transfer</button>
-            </div>
-        </div>
-
-        <!-- Pro Plan -->
-        <div class="plan" data-plan="pro">
-            <h2>Pro Plan</h2>
-            <ul>
-                <li>10 Videos per Month</li>
-                <li>High-Quality Templates</li>
-                <li>Priority Support</li>
-            </ul>
-            <div class="payments">
-                <button class="paypal" data-method="paypal">Pay with PayPal</button>
-                <button class="stripe" data-method="stripe">Pay with Stripe</button>
-                <button class="paystack" data-method="paystack">Pay with Paystack</button>
-                <button class="mpesa" data-method="mpesa">Pay with M-Pesa</button>
-                <button class="wise" data-method="wise">Pay with Wise</button>
-                <button class="bank" data-method="bank">Bank Transfer</button>
-            </div>
-        </div>
-
-        <!-- Diamond Plan -->
-        <div class="plan" data-plan="diamond">
-            <h2>Diamond Plan</h2>
-            <ul>
-                <li>Unlimited Videos</li>
-                <li>Premium Templates</li>
-                <li>VIP Support</li>
-                <li>Early Access Features</li>
-            </ul>
-            <div class="payments">
-                <button class="paypal" data-method="paypal">Pay with PayPal</button>
-                <button class="stripe" data-method="stripe">Pay with Stripe</button>
-                <button class="paystack" data-method="paystack">Pay with Paystack</button>
-                <button class="mpesa" data-method="mpesa">Pay with M-Pesa</button>
-                <button class="wise" data-method="wise">Pay with Wise</button>
-                <button class="bank" data-method="bank">Bank Transfer</button>
-            </div>
-        </div>
-
-        <!-- Cinematic Plan -->
-        <div class="plan" data-plan="cinematic">
-            <h2>Cinematic Plan</h2>
-            <ul>
-                <li>Unlimited Videos in Cinematic Quality</li>
-                <li>Exclusive Templates & Effects</li>
-                <li>Dedicated Account Manager</li>
-                <li>All Future Updates Included</li>
-            </ul>
-            <div class="payments">
-                <button class="paypal" data-method="paypal">Pay with PayPal</button>
-                <button class="stripe" data-method="stripe">Pay with Stripe</button>
-                <button class="paystack" data-method="paystack">Pay with Paystack</button>
-                <button class="mpesa" data-method="mpesa">Pay with M-Pesa</button>
-                <button class="wise" data-method="wise">Pay with Wise</button>
-                <button class="bank" data-method="bank">Bank Transfer</button>
-            </div>
-        </div>
-
+  <!-- Pro -->
+  <div class="price-card">
+    <h4>Pro</h4>
+    <div class="price">$19 / month<br><small style="font-weight:500;color:#eadfb0;">or $300 / year</small></div>
+    <p>Up to 1-minute videos, 10 generations / month, 1080p export, merge 3 clips.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <button class="primary" onclick="payStripe('pro_month')">Stripe</button>
+      <button class="primary" onclick="payPayPal('pro')">PayPal</button>
+      <button class="primary" onclick="payMpesa('pro')">M-Pesa</button>
+      <button class="primary" onclick="payWise('pro')">Wise</button>
+      <button class="primary" onclick="payPaystack('pro')">Paystack</button>
     </div>
+  </div>
+
+  <!-- Diamond -->
+  <div class="price-card">
+    <h4>Diamond</h4>
+    <div class="price">$49 / month<br><small style="font-weight:500;color:#eadfb0;">or $450 / year</small></div>
+    <p>Up to 2–3 minute videos, 50 generations / month, 4K exports, bulk generator.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <button class="primary" onclick="payStripe('diamond_month')">Stripe</button>
+      <button class="primary" onclick="payPayPal('diamond')">PayPal</button>
+      <button class="primary" onclick="payMpesa('diamond')">M-Pesa</button>
+      <button class="primary" onclick="payWise('diamond')">Wise</button>
+      <button class="primary" onclick="payPaystack('diamond')">Paystack</button>
+    </div>
+  </div>
+
+  <!-- Cinematic -->
+  <div class="price-card">
+    <h4>Cinematic</h4>
+    <div class="price">$99 / month<br><small style="font-weight:500;color:#eadfb0;">or $600 / year</small></div>
+    <p>Studio-grade control, priority rendering, extended length, advanced storytelling AI.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <button class="primary" onclick="payStripe('cinematic_month')">Stripe</button>
+      <button class="primary" onclick="payPayPal('cinematic')">PayPal</button>
+      <button class="primary" onclick="payMpesa('cinematic')">M-Pesa</button>
+      <button class="primary" onclick="payWise('cinematic')">Wise</button>
+      <button class="primary" onclick="payPaystack('cinematic')">Paystack</button>
+    </div>
+  </div>
+
+  <!-- Lifetime -->
+  <div class="price-card">
+    <h4>Lifetime (Launch)</h4>
+    <div class="price">$500 one-time</div>
+    <p>Unlimited videos, all features unlocked, lifetime access & priority support.</p>
+    <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <button class="primary" onclick="payStripe('lifetime')">Stripe</button>
+      <button class="primary" onclick="payPayPal('lifetime')">PayPal</button>
+      <button class="primary" onclick="payMpesa('lifetime')">M-Pesa</button>
+      <button class="primary" onclick="payWise('lifetime')">Wise</button>
+      <button class="primary" onclick="payPaystack('lifetime')">Paystack</button>
+    </div>
+  </div>
+</div>
+
+<div class="payment-icons">
+  <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Mastercard-logo.svg" alt="Mastercard">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Amex_logo.svg" alt="Amex">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/63/M-Pesa_Logo.svg" alt="M-Pesa">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/f/f1/Wise_Logo.svg" alt="Wise">
+  <img src="https://seeklogo.com/images/P/paystack-logo-46C1314A9C-seeklogo.com.png" alt="Paystack">
+</div>
 </section>
 
-<!-- Testimonials Section -->
-<section id="testimonials">
-    <h2 class="section-title">What Our Users Say</h2>
-    <div class="testimonials">
-        <div class="testimonial">
-            <p>"Kairah Studio changed how I create content. Fast, easy, and beautiful videos every time!"</p>
-            <h4>- Jane D.</h4>
-        </div>
-        <div class="testimonial">
-            <p>"The AI templates are incredible. I went from zero to viral content in days!"</p>
-            <h4>- Mike L.</h4>
-        </div>
-        <div class="testimonial">
-            <p>"Multiple payment options made it simple for me to upgrade my plan instantly."</p>
-            <h4>- Sam K.</h4>
-        </div>
-    </div>
+<!-- About -->
+<section id="about">
+<h2>About Kairah Studio</h2>
+<div class="about-long">
+<h3>AI-Driven Cinematics</h3>
+<p>Kairah Studio generates viral-quality AI videos in seconds. Free users can create short previews, and paid subscribers get access to high-res, long-format, customizable cinematic content with AI-driven storytelling.</p>
+<div class="about-questions">
+<div class="q"><h4>Do I need to sign in?</h4><p>Yes, signing in with Firebase is required to generate videos. Previewing templates does not require login.</p></div>
+<div class="q"><h4>Payment Methods?</h4><p>All subscriptions support Stripe, PayPal, M-Pesa, Wise, and Paystack.</p></div>
+<div class="q"><h4>Can I try before buying?</h4><p>Yes, Free plan allows 1 six-second video with watermark for evaluation.</p></div>
+</div>
+</div>
 </section>
 
-<!-- FAQ Section -->
-<section id="faq">
-    <h2 class="section-title">Frequently Asked Questions</h2>
-    <div class="faq">
-        <div class="faq-item">
-            <h4 onclick="this.nextElementSibling.classList.toggle('open')">Can I try for free?</h4>
-            <p style="display:none;">Yes! The Free Plan allows 1 video per email to test the platform.</p>
-        </div>
-        <div class="faq-item">
-            <h4 onclick="this.nextElementSibling.classList.toggle('open')">Which payment methods are supported?</h4>
-            <p style="display:none;">We support PayPal, Stripe, Paystack, M-Pesa, Wise, and direct bank transfer.</p>
-        </div>
-        <div class="faq-item">
-            <h4 onclick="this.nextElementSibling.classList.toggle('open')">Can I cancel anytime?</h4>
-            <p style="display:none;">Yes, all paid plans can be canceled anytime from your account settings.</p>
-        </div>
-    </div>
-</section>
+</main>
 
-<!-- Footer -->
-<footer id="contact">
-    <p>&copy; 2025 Kairah Studio. All rights reserved.</p>
-    <p>Email: support@kairahstudio.com | Phone: +254 700 000 000</p>
+<footer>
+&copy; 2025 Kairah Studio. All rights reserved.
 </footer>
 
 <script>
-// Payment button click
-document.querySelectorAll('.payments button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const plan = btn.closest('.plan').dataset.plan;
-        const method = btn.dataset.method;
-        alert(`Selected Plan: ${plan}\nPayment Method: ${method}\nImplement your payment backend here.`);
-    });
-});
-
-// FAQ toggle
-document.querySelectorAll('.faq-item h4').forEach(item => {
-    item.addEventListener('click', () => {
-        const p = item.nextElementSibling;
-        if(p.style.display === 'none' || !p.style.display) {
-            p.style.display = 'block';
-        } else {
-            p.style.display = 'none';
-        }
-    });
-});
+/* Payment stubs */
+function payMpesa(plan){ alert('M-Pesa payment flow for ' + plan + ' (visual mock)'); }
+function payWise(plan){ alert('Wise payment flow for ' + plan + ' (visual mock)'); }
+function payPaystack(plan){ alert('Paystack payment flow for ' + plan + ' (visual mock)'); }
+function payPayPal(plan){ alert('PayPal payment flow for ' + plan + ' (visual mock)'); }
+function payStripe(plan){ alert('Stripe payment flow for ' + plan + ' (visual mock)'); }
 </script>
 
 </body>
