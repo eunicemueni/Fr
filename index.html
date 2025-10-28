@@ -1,131 +1,291 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kairah Studio Payment</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kairah Studio — Divine Cinematics by AI</title>
 
-  <!-- Stripe -->
-  <script src="https://js.stripe.com/v3/"></script>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Display:wght@700&family=Poppins:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- PayPal -->
-  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-  <!-- Paystack -->
-  <script src="https://js.paystack.co/v1/inline.js"></script>
+<!-- Stripe + PayPal -->
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD"></script>
 
-  <style>
-    body { font-family: Arial, sans-serif; background:#f8f8f8; margin:0; padding:0; }
-    header { padding:20px; text-align:center; background:#3D2C41; color:#fff; font-size:24px; }
-    main { padding:20px; max-width:800px; margin:auto; }
-    section { background:#fff; padding:20px; border-radius:12px; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
-    h2 { margin-bottom:16px; }
-    .payment-buttons { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
-    .payment-buttons button { padding:12px; border:none; border-radius:8px; color:#fff; font-weight:bold; cursor:pointer; font-size:16px; }
-    .stripe-btn { background:#6772e5; }
-    .paypal-btn { background:#ffc439; color:#000; }
-    .paystack-btn { background:#00cfff; }
-    .wise-btn { background:#25b6f5; }
-    .payment-icons { display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:10px; }
-    .payment-icons img { width:44px; }
-    footer { text-align:center; padding:12px; background:#eee; }
-  </style>
+<style>
+  /* ---- Your original CSS unchanged ---- */
+  :root{
+    --deep-plum:#3D2C41;
+    --gold:#D4AF37;
+    --gold-2:#FFD700;
+    --card-bg: rgba(255,255,255,0.04);
+    --glass: rgba(255,255,255,0.03);
+    --accent:#D4AF37;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background: linear-gradient(135deg,#0B0A0B,#1C1B1C);
+    color:#fff;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    background:var(--deep-plum);
+    padding:28px 20px;
+    text-align:center;
+    box-shadow:0 6px 20px rgba(0,0,0,0.6);
+    position:sticky;
+    top:0;
+    z-index:40;
+  }
+  header h1{
+    margin:0;
+    font-family:'Cinzel Display',serif;
+    font-size:36px;
+    color:var(--gold);
+    letter-spacing:0.5px;
+  }
+  header p{ margin:6px 0 0; color:var(--gold-2); font-weight:500; }
+  nav{ margin-top:12px; display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }
+  nav a{ color:var(--gold-2); text-decoration:none; font-weight:500; padding:6px 8px; border-radius:6px; }
+  nav a:hover{ background:rgba(255,215,0,0.08); color:#fff; }
+
+  main{ max-width:1200px; margin:36px auto; padding:0 20px; }
+
+  section{ margin-bottom:48px; }
+  h2{ font-family:'Cinzel Display',serif; font-size:24px; margin:0 0 18px; text-align:center; }
+  .hero{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+    align-items:center;
+    text-align:center;
+  }
+  .video-mock{
+    background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.7));
+    border:1px solid rgba(212,175,55,0.06);
+    height:320px;
+    border-radius:14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:var(--gold);
+    box-shadow:0 18px 50px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+    font-weight:700;
+    font-size:18px;
+  }
+  .hero .cta{ margin-top:10px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  button.primary{ background:var(--gold); border:none; color:#111; padding:12px 18px; border-radius:10px; font-weight:700; cursor:pointer; }
+  button.ghost{ background:transparent; border:1px solid rgba(212,175,55,0.18); color:var(--gold-2); padding:10px 16px; border-radius:10px; cursor:pointer; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+
+  .card{
+    background:var(--card-bg);
+    padding:18px;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.02);
+  }
+  .card h3{ margin:0 0 8px; font-size:18px; }
+  .card p{ margin:0; color: #eae6df; font-size:14px; line-height:1.45; }
+
+  .pricing-grid{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; align-items:stretch; }
+  .price-card{ width:240px; padding:18px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.15)); border:1px solid rgba(212,175,55,0.06); }
+  .price-card h4{ margin:0 0 6px; color:var(--gold-2); }
+  .price-card .price{ font-size:20px; font-weight:800; margin:8px 0; color:var(--gold); }
+  .payment-icons{ display:flex; gap:8px; align-items:center; margin-top:12px; justify-content:center; }
+  .payment-icons img{ width:44px; height:auto; filter: none; }
+
+  /* Auth overlay */
+  #auth-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:120;
+    align-items:center;
+    justify-content:center;
+  }
+  #auth-box{ width:100%; max-width:400px; background:#121012; border-radius:12px; padding:20px; border:1px solid rgba(212,175,55,0.06); }
+  #auth-box h3{ font-family:'Cinzel Display',serif; color:var(--gold); margin:0 0 8px; text-align:center; }
+  #auth-box input{ width:100%; padding:10px; margin-bottom:12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:transparent; color:#fff; }
+  #auth-box button{ width:100%; padding:12px; border-radius:8px; border:none; background:var(--gold); color:#111; font-weight:700; cursor:pointer; }
+  #auth-box p{ color:#eae6df; font-size:14px; text-align:center; margin-top:8px; }
+</style>
 </head>
 <body>
-  <header>
-    Kairah Studio
-  </header>
 
-  <main>
-    <section id="payment">
-      <h2>Choose Your Payment Method</h2>
+<header>
+  <h1>Kairah Studio</h1>
+  <p>Divine Cinematics by AI</p>
+  <nav>
+    <a href="#hero">Home</a>
+    <a href="#tools">Tools</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#about">About</a>
+  </nav>
+</header>
 
-      <!-- Buttons -->
-      <div class="payment-buttons">
-        <button class="stripe-btn" onclick="payStripe('price_XXXXXXXX')">Pay with Stripe</button>
-        <div id="paypal-button-container">
-          <button class="paypal-btn" onclick="renderPayPalButton()">Pay with PayPal</button>
-        </div>
-        <button class="paystack-btn" onclick="payPaystack(1900,'Pro')">Pay with Paystack</button>
-        <button class="wise-btn" onclick="payWise(19,'USD','Pro')">Pay with Wise</button>
-      </div>
+<main>
+<section id="hero" class="hero">
+  <div class="video-mock">
+    <p>Generate your first cinematic AI video!</p>
+    <div class="cta">
+      <button class="primary" id="create-video-btn">Create Video</button>
+      <button class="ghost" onclick="alert('Preview templates')">Preview</button>
+    </div>
+  </div>
+</section>
 
-      <!-- Card logos -->
-      <div class="payment-icons">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Mastercard-logo.svg" alt="Mastercard">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Amex_logo.svg" alt="Amex">
-        <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal">
-      </div>
-    </section>
+<section id="pricing">
+  <h2>Pricing Plans</h2>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h4>Pro</h4>
+      <div class="price">$19/month</div>
+      <div id="paypal-pro"></div>
+      <button onclick="payStripe('pro_month')">Pay with Stripe</button>
+    </div>
+    <div class="price-card">
+      <h4>Diamond</h4>
+      <div class="price">$49/month</div>
+      <div id="paypal-diamond"></div>
+      <button onclick="payStripe('diamond_month')">Pay with Stripe</button>
+    </div>
+    <div class="price-card">
+      <h4>Cinematic</h4>
+      <div class="price">$99/month</div>
+      <div id="paypal-cinematic"></div>
+      <button onclick="payStripe('cinematic_month')">Pay with Stripe</button>
+    </div>
+    <div class="price-card">
+      <h4>Lifetime</h4>
+      <div class="price">$500 one-time</div>
+      <div id="paypal-lifetime"></div>
+      <button onclick="payStripe('lifetime')">Pay with Stripe</button>
+    </div>
+  </div>
+</section>
 
-    <section>
-      <h2>Welcome to Kairah Studio</h2>
-      <p>Generate AI videos, explore tools, and manage your subscription.</p>
-    </section>
-  </main>
+<section id="about">
+  <h2>About Kairah Studio</h2>
+  <div class="about-long">
+    <p>Welcome to Kairah Studio, where AI meets divine cinematic creation. Generate high-quality short videos in seconds, designed to captivate and inspire.</p>
+  </div>
+</section>
 
-  <footer>
-    &copy; 2025 Kairah Studio. All rights reserved.
-  </footer>
+</main>
 
-  <script>
-    // ---------------- Stripe Payment ----------------
-    async function payStripe(priceId){
-      const stripe = Stripe('YOUR_STRIPE_PUBLIC_KEY');
+<footer>
+  &copy; 2025 Kairah Studio. All rights reserved.
+</footer>
 
-      // Create a checkout session from your backend
-      const response = await fetch('/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId })
+<!-- Auth Overlay -->
+<div id="auth-overlay">
+  <div id="auth-box">
+    <h3>Sign In to Kairah Studio</h3>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button id="signin-btn">Sign In / Register</button>
+    <p id="auth-msg"></p>
+  </div>
+</div>
+
+<script>
+  // ---- Firebase Config ----
+  const firebaseConfig = {
+    apiKey: "YOUR_FIREBASE_API_KEY",
+    authDomain: "YOUR_FIREBASE_AUTH_DOMAIN",
+    projectId: "YOUR_FIREBASE_PROJECT_ID",
+    storageBucket: "YOUR_FIREBASE_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_FIREBASE_MESSAGING_ID",
+    appId: "YOUR_FIREBASE_APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  const authOverlay = document.getElementById('auth-overlay');
+  const createBtn = document.getElementById('create-video-btn');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const signinBtn = document.getElementById('signin-btn');
+  const authMsg = document.getElementById('auth-msg');
+
+  // Check auth state
+  auth.onAuthStateChanged(user=>{
+    if(user) authOverlay.style.display='none';
+    else authOverlay.style.display='flex';
+  });
+
+  createBtn.addEventListener('click',()=>{
+    const user = auth.currentUser;
+    if(user){
+      alert('Video creation unlocked! 🎬');
+      // Place your video generation function here
+    } else {
+      authOverlay.style.display='flex';
+    }
+  });
+
+  signinBtn.addEventListener('click',()=>{
+    const email = emailInput.value;
+    const pass = passwordInput.value;
+    if(!email || !pass){ authMsg.textContent='Please enter email & password.'; return; }
+    auth.signInWithEmailAndPassword(email,pass)
+    .then(()=>{ authMsg.textContent='Signed in successfully!'; authOverlay.style.display='none'; })
+    .catch(err=>{
+      if(err.code==='auth/user-not-found'){
+        // Register new user
+        auth.createUserWithEmailAndPassword(email,pass)
+        .then(()=>{ authMsg.textContent='Registered successfully!'; authOverlay.style.display='none'; })
+        .catch(e=>{ authMsg.textContent=e.message; });
+      } else authMsg.textContent=err.message;
+    });
+  });
+
+  // ---- Stripe ----
+  const stripe = Stripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+  async function payStripe(priceKey){
+    try{
+      const res = await fetch('/create-stripe-session',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({priceKey})
       });
+      const data = await res.json();
+      if(data.url) window.location.href = data.url;
+      else alert('Stripe session creation failed.');
+    } catch(e){ console.error(e); alert('Stripe checkout error.'); }
+  }
 
-      const session = await response.json();
-      stripe.redirectToCheckout({ sessionId: session.id });
-    }
+  // ---- PayPal ----
+  function initPayPalButtons(){
+    if(typeof paypal==='undefined') return;
+    const plans=[
+      {id:'paypal-pro', value:'19.00'},
+      {id:'paypal-diamond', value:'49.00'},
+      {id:'paypal-cinematic', value:'99.00'},
+      {id:'paypal-lifetime', value:'500.00'}
+    ];
+    plans.forEach(plan=>{
+      const container=document.getElementById(plan.id);
+      if(container){
+        paypal.Buttons({
+          style:{layout:'vertical', color:'gold', shape:'rect', label:'paypal'},
+          createOrder:function(data,actions){return actions.order.create({purchase_units:[{amount:{value:plan.value}}]});},
+          onApprove:function(data,actions){return actions.order.capture().then(details=>{alert('Transaction completed by '+(details.payer.name?.given_name||'payer'));});}
+        }).render(container);
+      }
+    });
+  }
+  window.addEventListener('load',initPayPalButtons);
+</script>
 
-    // ---------------- PayPal Payment ----------------
-    function renderPayPalButton(){
-      paypal.Buttons({
-        createOrder: function(data, actions){
-          return actions.order.create({
-            purchase_units:[{ amount:{ value:'19.00' } }]
-          });
-        },
-        onApprove: function(data, actions){
-          return actions.order.capture().then(function(details){
-            alert('PayPal payment successful for ' + details.payer.name.given_name);
-          });
-        },
-        onError: function(err){
-          alert('PayPal error: ' + err);
-        }
-      }).render('#paypal-button-container');
-    }
-
-    // ---------------- Paystack Payment ----------------
-    function payPaystack(amountKSh, plan){
-      var handler = PaystackPop.setup({
-        key: 'YOUR_PAYSTACK_PUBLIC_KEY',
-        email: 'customer@example.com',
-        amount: amountKSh * 100,
-        currency: 'KES',
-        callback: function(response){
-          alert('Payment complete for ' + plan + '. Reference: ' + response.reference);
-        },
-        onClose: function(){
-          alert('Payment window closed.');
-        }
-      });
-      handler.openIframe();
-    }
-
-    // ---------------- Wise Payment Simulation ----------------
-    function payWise(amount, currency, plan){
-      alert('Redirecting to Wise for ' + plan + ', amount: ' + amount + ' ' + currency);
-      // For live integration, redirect user to Wise checkout URL generated from your backend
-    }
-  </script>
 </body>
 </html>
