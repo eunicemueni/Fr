@@ -3,87 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KKODS Pricing</title>
-    <!-- Your existing CSS links -->
+    <title>Kairah Studio Pricing</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+        .pricing-section { max-width: 1200px; margin: auto; padding: 50px 20px; }
+        .plan { background: white; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 30px; }
+        .plan h2 { margin-top: 0; }
+        .plan ul { list-style: none; padding-left: 0; }
+        .plan ul li { padding: 5px 0; }
+        .payments { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .payments button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+        .payments button.paypal { background: #003087; color: white; }
+        .payments button.stripe { background: #6772e5; color: white; }
+        .payments button.paystack { background: #ffb400; color: black; }
+        .payments button.mpesa { background: #00923f; color: white; }
+        .payments button.wise { background: #00b0ff; color: white; }
+        .payments button.bank { background: #555; color: white; }
+    </style>
 </head>
 <body>
-    <!-- Your existing header and navigation -->
-    <header>
-        <h1>KKODS</h1>
-        <nav>
-            <a href="#home">Home</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#contact">Contact</a>
-        </nav>
-    </header>
+    <section class="pricing-section">
+        <h1 style="text-align:center; margin-bottom:50px;">Kairah Studio Plans</h1>
 
-    <!-- Your existing sections -->
-    <section id="home">
-        <h2>Welcome to KKODS</h2>
-        <p>Your current content here...</p>
-    </section>
-
-    <section id="pricing">
-        <h2>Pricing</h2>
-        <p>Your existing pricing content here...</p>
-
-        <!-- PAYMENT SECTION START -->
-        <div id="payment-options" style="margin-top:20px;">
-            <!-- M-Pesa -->
-            <form action="https://your-backend.com/mpesa" method="POST" style="margin-bottom:10px;">
-                <input type="text" name="phone" placeholder="Enter M-Pesa number">
-                <button type="submit">Pay with M-Pesa</button>
-            </form>
-
-            <!-- PayPal -->
-            <form action="https://www.paypal.com/cgi-bin/webscr" method="POST" target="_blank" style="margin-bottom:10px;">
-                <input type="hidden" name="cmd" value="_xclick">
-                <input type="hidden" name="business" value="YOUR_PAYPAL_EMAIL@example.com">
-                <input type="hidden" name="item_name" value="Purchase">
-                <input type="hidden" name="amount" value="10.00">
-                <input type="hidden" name="currency_code" value="USD">
-                <button type="submit">Pay with PayPal</button>
-            </form>
-
-            <!-- Wise -->
-            <form action="https://wise.com/send" method="GET" target="_blank" style="margin-bottom:10px;">
-                <input type="email" name="email" placeholder="Your email">
-                <button type="submit">Pay with Wise</button>
-            </form>
-
-            <!-- Direct Bank Transfer -->
-            <form action="https://your-backend.com/bank-transfer" method="POST" style="margin-bottom:10px;">
-                <input type="text" name="bank_name" placeholder="Bank Name">
-                <input type="text" name="account_number" placeholder="Account Number">
-                <button type="submit">Pay via Bank Transfer</button>
-            </form>
-
-            <!-- Stripe -->
-            <form action="https://your-backend.com/stripe-checkout" method="POST" style="margin-bottom:10px;">
-                <input type="email" name="email" placeholder="Your email">
-                <input type="hidden" name="amount" value="1000">
-                <button type="submit">Pay with Stripe</button>
-            </form>
-
-            <!-- Paystack -->
-            <form action="https://your-backend.com/paystack-pay" method="POST" style="margin-bottom:10px;">
-                <input type="email" name="email" placeholder="Your email">
-                <input type="hidden" name="amount" value="1000">
-                <button type="submit">Pay with Paystack</button>
-            </form>
+        <!-- Free Plan -->
+        <div class="plan">
+            <h2>Free Plan</h2>
+            <ul>
+                <li>1 Video per Email</li>
+                <li>Basic Templates</li>
+                <li>Limited Features</li>
+            </ul>
+            <div class="payments">
+                <button class="paypal">Pay with PayPal</button>
+                <button class="stripe">Pay with Stripe</button>
+                <button class="paystack">Pay with Paystack</button>
+                <button class="mpesa">Pay with M-Pesa</button>
+                <button class="wise">Pay with Wise</button>
+                <button class="bank">Direct Bank Transfer</button>
+            </div>
         </div>
-        <!-- PAYMENT SECTION END -->
+
+        <!-- Pro Plan -->
+        <div class="plan">
+            <h2>Pro Plan</h2>
+            <ul>
+                <li>10 Videos per Month</li>
+                <li>High-Quality Templates</li>
+                <li>Priority Support</li>
+            </ul>
+            <div class="payments">
+                <button class="paypal">Pay with PayPal</button>
+                <button class="stripe">Pay with Stripe</button>
+                <button class="paystack">Pay with Paystack</button>
+                <button class="mpesa">Pay with M-Pesa</button>
+                <button class="wise">Pay with Wise</button>
+                <button class="bank">Direct Bank Transfer</button>
+            </div>
+        </div>
+
+        <!-- Diamond Plan -->
+        <div class="plan">
+            <h2>Diamond Plan</h2>
+            <ul>
+                <li>Unlimited Videos</li>
+                <li>Premium Templates</li>
+                <li>VIP Support</li>
+                <li>Early Access Features</li>
+            </ul>
+            <div class="payments">
+                <button class="paypal">Pay with PayPal</button>
+                <button class="stripe">Pay with Stripe</button>
+                <button class="paystack">Pay with Paystack</button>
+                <button class="mpesa">Pay with M-Pesa</button>
+                <button class="wise">Pay with Wise</button>
+                <button class="bank">Direct Bank Transfer</button>
+            </div>
+        </div>
+
+        <!-- Cinematic Plan -->
+        <div class="plan">
+            <h2>Cinematic Plan</h2>
+            <ul>
+                <li>Unlimited Videos in Cinematic Quality</li>
+                <li>Exclusive Templates & Effects</li>
+                <li>Dedicated Account Manager</li>
+                <li>All Future Updates Included</li>
+            </ul>
+            <div class="payments">
+                <button class="paypal">Pay with PayPal</button>
+                <button class="stripe">Pay with Stripe</button>
+                <button class="paystack">Pay with Paystack</button>
+                <button class="mpesa">Pay with M-Pesa</button>
+                <button class="wise">Pay with Wise</button>
+                <button class="bank">Direct Bank Transfer</button>
+            </div>
+        </div>
     </section>
 
-    <section id="contact">
-        <h2>Contact</h2>
-        <p>Your existing contact info here...</p>
-    </section>
-
-    <footer>
-        <p>&copy; 2025 KKODS. All rights reserved.</p>
-    </footer>
-
+    <script>
+        // Example click handlers (replace with your real payment integration)
+        document.querySelectorAll('.payments button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                alert('You clicked: ' + btn.textContent + '\nImplement your payment integration here.');
+            });
+        });
+    </script>
 </body>
 </html>
